@@ -23,7 +23,6 @@ import xgboost as xgb
 # Optional: for building a simple interactive web app
 import streamlit as st
 
-
 #### DATASET ####
 # Load CSV
 file_path = "IBM.csv"
@@ -40,7 +39,7 @@ columns_to_clean = [
     ]
 for col in columns_to_clean:
     df[col] = df[col].str.replace(',', '').astype(float)
-    
+
 #### EXPLORATORY DATA ANALYSIS (EDA) ####
 
 #### HANDLE CLASS IMBALANCE ####

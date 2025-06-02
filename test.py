@@ -25,11 +25,25 @@ import streamlit as st
 
 
 #### DATASET ####
-
 # Load CSV
 file_path = "IBM.csv"
 df = pd.read_csv(file_path)
 # print(df)
 
+#### PREPROCESSING ####
+
+#### EXPLORATORY DATA ANALYSIS (EDA) ####
+
+#### HANDLE CLASS IMBALANCE ####
+
+#### TRAIN TEST SPLIT ####
+
+#### FEATURE SCALING ####
+
+#### MODELLING ####
+
+#### EVALUATION ####
+
+#### PREDICTION AND OUTPUT ####
 
 

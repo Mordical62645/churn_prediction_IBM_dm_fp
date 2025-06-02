@@ -31,7 +31,16 @@ df = pd.read_csv(file_path)
 # print(df)
 
 #### PREPROCESSING ####
-
+# Clean dataset
+columns_to_clean = [
+    'customerID', 'gender', 'SeniorCitizen', 'Partner', 'Dependents',
+    'tenure', 'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity',
+    'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies',
+    'Contract', 'PaperlessBilling', 'PaymentMethod', 'MonthlyCharges', 'TotalCharges', 'Churn'
+    ]
+for col in columns_to_clean:
+    df[col] = df[col].str.replace(',', '').astype(float)
+    
 #### EXPLORATORY DATA ANALYSIS (EDA) ####
 
 #### HANDLE CLASS IMBALANCE ####

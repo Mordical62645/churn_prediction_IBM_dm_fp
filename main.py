@@ -28,4 +28,4 @@ import streamlit as st
 
 # Load CSV
 file_path = "IBM.csv"
-df = pd.read(file_path)
+df = pd.read_csv(file_path)

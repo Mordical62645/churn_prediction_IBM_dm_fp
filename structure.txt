@@ -1,0 +1,12 @@
+churn_project/
+│
+├── model/
+│   └── churn_model.py
+│
+├── api/
+│   └── app.py           # your Flask backend
+│
+├── frontend/            # your React frontend
+│
+├── model.pkl            # saved model
+└── scaler.pkl           # saved scaler

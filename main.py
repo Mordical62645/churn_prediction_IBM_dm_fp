@@ -22,3 +22,10 @@ import xgboost as xgb
 
 # Optional: for building a simple interactive web app
 import streamlit as st
+
+
+#### DATASET ####
+
+# Load CSV
+file_path = "IBM.csv"
+df = pd.read(file_path)

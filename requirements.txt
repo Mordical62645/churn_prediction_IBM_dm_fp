@@ -1,0 +1,17 @@
+# Core libraries
+pandas
+numpy
+scikit-learn
+
+# For data visualization
+matplotlib
+seaborn
+
+# For handling imbalanced datasets
+imbalanced-learn  # includes SMOTE
+
+# For high-performance modeling
+xgboost
+
+# Optional: build a web app demo
+streamlit

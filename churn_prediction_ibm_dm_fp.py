@@ -7,19 +7,112 @@ Original file is located at
     https://colab.research.google.com/drive/1fl-T_pbyzQ-WZqjpHe3Q7uXUIhCTBQzx
 """
 
-# !gdown --fuzzy "https://drive.google.com/file/d/1rYFumAaLcacQb59IYC-g_8douKWOIkTi/view?usp=sharing"
+# if using google colab, run this first: !gdown --fuzzy "https://drive.google.com/file/d/1rYFumAaLcacQb59IYC-g_8douKWOIkTi/view?usp=sharing"
+
+# Objective
+# * Predict customers likely to stop using telecom services to target retention efforts.
+
+# Data
+# * Customer usage, billing, complaint records, demographic info.
+
+# Procedure Used
+# * Data Balancing (SMOTE for imbalanced data)
+# * Classification Algorithms (Logistic Regression, XGBoost)
+# * Feature Importance Analysis
+
+# Outcome
+# * Proactive retention campaign to reduce churn rate.
+
+#### LIBRARIES ####
+  # Requirements natin dito is yung data analysis starter:
+    # Numpy for extensive math
+    # Pandas pang data manipulation
+    # Matplotlib / Seaborn for visualization
+    # scikit-learn for statistical computation
+  # Gagamit din tayo ng SMOTE for handling imabalance dataset
+
+"""
+  We're trying to identify patterns of certain characteristics
+  bakit ang isang customer ay nag-Churn o nag-end ng service.
+  Pepredict din namin how likely sa mga hindi pa nagcchurn
+  will they eventually churn. Gagamit tayo ng
+  classification algorithims. As per instructions:
+  Logistic Regression at XGBoost.
+"""
+  # Logistic Regression is simple, interpretable, but may underfit.
+  # XGBoost is more powerful for complex relationships, handles imbalanced data well.
+
+#### DATASET ####
+  # Nakuha natin yung dataset from Kaggle: https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download
+  # Originally named as: Telco Customer Churn
+  # IBM Sample dataset to.
+  # Of course, need neto maimport sa notebook:
+    # Google Colab: run mo to sa pinakataas -> !gdown --fuzzy "https://drive.google.com/file/d/1rYFumAaLcacQb59IYC-g_8douKWOIkTi/view?usp=sharing"
+      # Dapat nakapublic yung dataset para madownload. Nakalocate yung downloaded csv sa files/sample_data ng Colab
+    # Locally, isama lang natin yung csv along with the notebook file sa iisang location.
+  # Rule of thumb diyan is always check for contents ng csv externally or internally para magkaron naman ng familiarity at context.
+
+#### DATA CLEANING ####
+"""
+  Next na titignan natin, kung tama ba yung datatype ng column.
+  If a column should be string like 'Name', it should return as string type
+  If float like "Revenue", it should return as float.
+"""
+  # Upon running dataframe information, we noticed that 'TotalCharges' is a string type.
+  # Upon running total dataframe null values, 'TotalCharges' has 0 null values.
+    # meaning, out of 7000 rows, lahat ay filled. Which is wala namang mali when you think about it.
+  # Rule of thumb diyan, is we always work with missing values first.
+  # " " (blank string) can be classified as a data of value. Meaning, may value parin yan.
+  # We cannot convert 'TotalCharges' to float kasi (" ") blank strings are strings.
+  # So need natin iconvert muna mga blank strings to NaN (Not-a-Number) para maidentify na null value sila
+  # Then we can convert 'TotalCharges' datatype to float.
+  # Recheck natin: running total dataframe null values, finally gave us 'TotalCharges' has 11 null values.
+    # Ito rule diyan:
+      # Kapag less ang missing rows sa overall row: Safe to drop (or delete kumbaga)
+        # Since 11 lang naman total missing row ni 'TotalCharges', drop na natin
+      # 5 - 10% ng rows ay missing: Fill with mean, median, or mode para ma-average
+      # Kapag sobrang daming rows ang missing: Drop narin natin. Filling will introduce bias.
+  # Temporarily magddrop din tayo ng column fields para sa testing at training, hindi mahihirapang basahin yung machine
+    # Sa case nito: since customerID is unique identifier, di siya makakaapekto sa pag classify ng patterns. So drop it.
+  # Working with redundant data na pwede namang globally i-rename as global value makakatulong sa pag train ng model
+    # Sa case nito: May "No phone service" at "No internet service" Pwede namang gawing "No" nalang.
+    # same goes with ensuring type casing din.
+
+#### TRAIN TEST SPLIT + HANDLE CLASS IMBALANCE ####
+  # ...
+
+#### CUSTOM THRESHOLD PREDICTION ####
+  # ...
+
+#### FEATURE SCALING ####
+  # ...
+
+#### MODELLING ####
+  # ...
+
+#### EVALUATION ####
+  # ...
+
+#### PREDICTION AND OUTPUT ####
+  # ...
 
 #### LIBRARIES ####
 import pandas as pd
 import numpy as np
 
 # For splitting and scaling
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 
 # For modeling and evaluation
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import classification_report, precision_score, precision_recall_curve
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix,
+    classification_report, precision_score,
+    precision_recall_curve
+)
 
 # For visualization
 import matplotlib.pyplot as plt
@@ -31,43 +124,52 @@ from imblearn.over_sampling import SMOTE
 # For high-performance models
 import xgboost as xgb
 
-# Optional: for building a simple interactive web app
-import streamlit as st
-
 #### DATASET ####
 # Load CSV
 file_path = "IBM.csv"
 df = pd.read_csv(file_path)
-print(df.head()) # check column contents
+print(f"TELCO CUSTOMER CHURN: IBM SAMPLE DATASET\n{df.head()}") # check column contents
 print("-"*60,"\n")
 
 #### DATA CLEANING ####
 # check for column datatypes
-print(df.info()) # TotalCharges' data type is string, which is weird. Blank strings might be the reason why it cannot be converted to float.
+print("CHECK FOR COLUMN DATATYPES:")
+df.info()
+print("""\n
+'TotalCharges' data type is string, which is weird.
+Blank strings might be the reason why it cannot be converted to float.""")
 print("-"*60,"\n")
 
 # work with missing values first because blank 'strings' cannot be converted to float
-print(df.isnull().sum()) # blank strings can be classified as not null.
+print(f"CHECK FOR DATAFRAME TOTAL NULL VALUES:\n{df.isnull().sum()}")
+print("\nNOTE: Blank strings can be classified as not null.")
 print("-"*60,"\n")
 
 # replace blank strings with NaN
 df['TotalCharges'] = df['TotalCharges'].replace(" ", np.nan)
-print(df.isnull().sum()) # recheck missing values.
+print("Blank strings in 'TotalCharges' are replaced with NaN\n")
+print(f"CHECK FOR DATAFRAME TOTAL NULL VALUES:\n{df.isnull().sum()}")
+print("Missing TotalCharges: 11 (less missing data are safe to drop)")
 print("-"*60,"\n")
 
 # convert TotalCharges to float
 df['TotalCharges'] = df['TotalCharges'].astype(float)
-print(df.info()) # recheck datatype
+print("'TotalCharges' datatype is converted to float\n")
+print(f"CHECK FOR COLUMN DATATYPES:")
+df.info()
 print("-"*60,"\n")
 
 # Missing TotalCharges: 11 (less missing data are safe to drop, BRAD)
 df = df.dropna() # drop rows with missing (NaN) values: TotalCharges
-print(df.isnull().sum()) # check missing
+print(f"CHECK FOR DATAFRAME TOTAL NULL VALUES:\n{df.isnull().sum()}") # check missing
+print("\n No Null values found")
 print("-"*60,"\n")
 
 # We'll temprorarily drop irrelevant columns for the model. This will reduce training load for the model to handle.
 # customerID is purely unique identifier. It's safe to drop.
 df = df.drop('customerID', axis = 1) # axis = 0: delete a row; axis = 1 delete a column
+print("'customerID' dropped")
+print("-"*60,"\n")
 
 # work with redundant data. I'll just use AI to check for that shit with 7000 rows motherfucker that's a lot to analyze.
 # According to my boy, BaiGPT. Mahimo natong i-standardize ang 'No phone service' ug 'No internet service' isip 'No' hinuon.
@@ -94,17 +196,31 @@ df = df.replace({
         'Two year': 'Two Year'
     }
 })
+print("""Redundancy reworked:
+'MultipleLines': 'No phone service' is set to 'No'
+'OnlineSecurity': 'No internet service' is set to 'No'
+'OnlineBackup': 'No internet service' is set to 'No'
+'DeviceProtection': 'No internet service' is set to 'No'
+'TechSupport': 'No internet service' is set to 'No'
+'StreamingTV': 'No internet service' is set to 'No'
+'StreamingMovies': 'No internet service' is set to 'No'
+'PaymentMethod': 'Bank transfer (automatic)' is set to 'Bank Transfer'
+'Credit card (automatic)' is set to 'Credit Card'
+'Contract': 'Month-to-month' is set to 'Month-To-Month',
+'Contract': 'One year' is set to 'One Year',
+'Contract': 'Two year' is set to 'Two Year'
+""")
+print("-"*60,"\n")
 
-#### HANDLE CLASS IMBALANCE + TRAIN TEST SPLIT ####
+#### TRAIN TEST SPLIT + HANDLE CLASS IMBALANCE ####
 # Map (not replace) numeric of 'Churn' instead of Yes or No, we'll do 1 or 0
 df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
 df_encoded = pd.get_dummies(df) # Turn categorical data to numeric
+print("-"*60,"\n")
 
 # Define the features (X) and labels (y).
 X = df_encoded.drop(columns=['Churn'])
-# print(X)
 y = df_encoded['Churn']
-# print(y)
 
 # Use train_test_split() to divide into training and test sets.
   # X_train: Features for training
@@ -128,31 +244,184 @@ X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 print(f"Before SMOTE:\n {y_train.value_counts()}")
 print("-"*60,"\n")
 print(f"Afer SMOTE:\n {y_train_resampled.value_counts()}")
+print("-"*60,"\n")
 
 #### FEATURE SCALING ####
-# Apply StandardScaler() or similar only to features (X), not labels (y).
+# StandardScaler ensures fair treatment of all features in the model. Some features might have large values, while others have small values — but a “small” value in one
+# feature might be “large” relative to its own distribution.
 
+# Apply StandardScaler() or similar only to features (X), not labels (y).
+scaler = StandardScaler()
 
 # Remember: fit on X_train, then transform both X_train and X_test.
+X_train_scaled = scaler.fit_transform(X_train_resampled)
+X_test_scaled = scaler.transform(X_test)
 
 #### MODELLING ####
 # LogisticRegression
-
+lr = LogisticRegression(max_iter=1000)
+lr.fit(X_train_scaled, y_train_resampled) # Fit the model using X_train and y_train
 
 # XGBoost
+xgb_model = xgb.XGBClassifier(eval_metric='logloss')
+xgb_model.fit(X_train_scaled, y_train_resampled) # Fit the model using X_train and y_train
 
+#### CUSTOM THRESHOLD PREDICTION ####
+# Predict probabilities instead of 0/1 directly
+y_probs_lr = lr.predict_proba(X_test_scaled)[:, 1]
+y_probs_xgb = xgb_model.predict_proba(X_test_scaled)[:, 1]
 
-# Fit the model using X_train and y_train
+# Set a custom threshold to increase precision (default is 0.5)
+threshold = 0.7
+y_pred_lr = (y_probs_lr >= threshold).astype(int)
+y_pred_xgb = (y_probs_xgb >= threshold).astype(int)
+
+#### PRECISION-RECALL CURVE ####
+precision, recall, thresholds = precision_recall_curve(y_test, y_probs_xgb)
+plt.figure(figsize=(8, 5))
+plt.plot(thresholds, precision[:-1], label='Precision')
+plt.plot(thresholds, recall[:-1], label='Recall')
+plt.axvline(threshold, color='red', linestyle='--', label=f'Threshold = {threshold}')
+plt.xlabel('Threshold')
+plt.ylabel('Score')
+plt.title('Precision-Recall vs Threshold (XGBoost)')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 
 #### EVALUATION ####
-# Predict on X_test.
-# Evaluate using:
 # Accuracy
+print(f"Logistic Regression Accuracy:\n {accuracy_score(y_test, y_pred_lr)}")
+print("-"*60,"\n")
 
+print(f"XGBoost Accuracy:\n {accuracy_score(y_test, y_pred_xgb)}")
+print("-"*60,"\n")
 
 # Confusion matrix
+cm_lr = confusion_matrix(y_test, y_pred_lr)
+cm_xgb = confusion_matrix(y_test, y_pred_xgb)
+# Akala ko wala ng kwenta ang buhay ko
+# Pero sa 'yo ay nagkakulay 'to
+# Pagdating sa 'yo tanggal dalawang sungay ko
+# 'Yung dating matigas nagiging lantang gulay 'to
 
+
+# Plot (visualization)
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+sns.heatmap(cm_lr, annot=True, fmt='d', cmap='Blues', ax=axes[0])
+axes[0].set_title('Logistic Regression Confusion Matrix')
+axes[0].set_xlabel('Predicted')
+axes[0].set_ylabel('Actual')
+
+sns.heatmap(cm_xgb, annot=True, fmt='d', cmap='Greens', ax=axes[1])
+axes[1].set_title('XGBoost Confusion Matrix')
+axes[1].set_xlabel('Predicted')
+axes[1].set_ylabel('Actual')
+
+plt.tight_layout()
+plt.show()
 
 # Classification report (precision, recall, F1-score)
+print(f"Logistic Regression Classification Report (threshold={threshold}):\n {classification_report(y_test, y_pred_lr)}")
+print("-"*60,"\n")
+print(f"XGBoost Classification Report (threshold={threshold}):\n {classification_report(y_test, y_pred_xgb)}")
+print("-"*60,"\n")
 
 #### PREDICTION AND OUTPUT ####
+output = pd.DataFrame({
+    'Actual': y_test.values,
+    'LogReg_Predicted': y_pred_lr,
+    'LogReg_Probability': y_probs_lr,
+    'XGB_Predicted': y_pred_xgb,
+    'XGB_Probability': y_probs_xgb
+})
+
+print(output.head(10)) # Show top 10 predictions
+print("-"*60, "\n")
+
+# Save to CSV for further inspection
+output.to_csv("churn_predictions_threshold_0.7.csv", index=False)
+print("Predictions saved to churn_predictions_threshold_0.7.csv")
+print("-"*60, "\n")
+
+# Customers where the two models disagree
+disagreement = output[output['LogReg_Predicted'] != output['XGB_Predicted']]
+print("Customers with model disagreement:")
+print(disagreement.head(10))
+
+# Visualization
+plt.figure(figsize=(10, 5))
+sns.countplot(data=disagreement, x='Actual', hue='LogReg_Predicted')
+plt.title("Model Disagreement: Actual Churn vs Logistic Regression Prediction")
+plt.xlabel("Actual Churn")
+plt.ylabel("Customer Count")
+plt.legend(title="LogReg Predicted")
+plt.show()
+
+plt.figure(figsize=(10, 5))
+sns.countplot(data=disagreement, x='Actual', hue='XGB_Predicted')
+plt.title("Model Disagreement: Actual Churn vs XGBoost Prediction")
+plt.xlabel("Actual Churn")
+plt.ylabel("Customer Count")
+plt.legend(title="XGB Predicted")
+plt.show()
+
+print("-"*60, "\n")
+
+# Customers where both models agree on churn (AT RISK OF CHURNING DITO NA PAPASOK YUNG PROACTIVE RETENTION CAMPAIGN SHIT)
+agreed_churn = output[(output['LogReg_Predicted'] == 1) & (output['XGB_Predicted'] == 1)]
+agreed_churn = agreed_churn.sort_values(by='XGB_Probability', ascending=False)
+print("Customers with high-confidence churn predictions (both models agree):")
+print(agreed_churn.head(10))
+
+# Visualization
+plt.figure(figsize=(10, 6))
+sns.histplot(agreed_churn['XGB_Probability'], bins=10, kde=True, color='red')
+plt.title("Risk Scores of Customers Where Both Models Predict Churn")
+plt.xlabel("XGBoost Churn Probability")
+plt.ylabel("Number of Customers")
+plt.show()
+
+top10 = agreed_churn.head(10)
+plt.figure(figsize=(10, 6))
+sns.barplot(data=top10, x=top10.index, y='XGB_Probability', palette="Reds_r")
+plt.title("Top 10 At-Risk Customers (Agreed by Both Models)")
+plt.ylabel("XGB Churn Probability")
+plt.xlabel("Customer Index")
+plt.xticks(rotation=45)
+plt.show()
+
+print("-"*60, "\n")
+
+# OUTLIERS: Actual churners (Actual == 1) but predicted as not churn (0) (XGBoost)
+false_negatives = output[(output['Actual'] == 1) & (output['XGB_Predicted'] == 0)]
+print("False negatives (actual churn but model missed):")
+print(false_negatives.head(10))
+
+# Visualization
+plt.figure(figsize=(10, 6))
+sns.histplot(false_negatives['LogReg_Probability'], bins=10, kde=True, color='orange')
+plt.title("LogReg Probability for XGBoost False Negatives")
+plt.xlabel("Logistic Regression Churn Probability")
+plt.ylabel("Number of Customers")
+plt.show()
+
+plt.figure(figsize=(6, 4))
+sns.countplot(data=false_negatives, x='Actual')
+plt.title("Number of False Negatives (Actual == 1, XGB Predicted == 0)")
+plt.xlabel("Actual Churn")
+plt.ylabel("Count")
+plt.show()
+
+
+"""
+Hindi ko alam paano "Proactively" magbibigay ng retention campaign sakanila
+  * Offer the likely churning customer a discount
+  * Assign a customer care agent
+  * send a feedback survey (too keep them satisfied?)
+di ko lang alam pano ko ISUSUKSOK dito yan.
+Gusto ba ni ma'am interactive?
+Kinangangamba ko lang, di naman din kasi alam ni ma'am yan baka mas humirap trabaho NATIN
+pucha tinanong nga natin siya diyan nilagay lang yung pangalan ni Enriquez sa doc
+"""

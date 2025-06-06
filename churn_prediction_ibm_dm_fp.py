@@ -7,7 +7,8 @@ Original file is located at
     https://colab.research.google.com/drive/1fl-T_pbyzQ-WZqjpHe3Q7uXUIhCTBQzx
 """
 
-# if using google colab, run this first: !gdown --fuzzy "https://drive.google.com/file/d/1rYFumAaLcacQb59IYC-g_8douKWOIkTi/view?usp=sharing"
+# if using google colab, run this first:
+!gdown --fuzzy "https://drive.google.com/file/d/1rYFumAaLcacQb59IYC-g_8douKWOIkTi/view?usp=sharing"
 
 # Objective
 # * Predict customers likely to stop using telecom services to target retention efforts.
@@ -94,7 +95,26 @@ Original file is located at
   # ...
 
 #### PREDICTION AND OUTPUT ####
-  # ...
+  # Palatino's Findings and Understandings:
+
+  # In predicting churn customers for telecommunication services, both XGBoost and Logistic Regression were used to improve prediction accuracy. Each model has its own
+  # strengths and weaknesses: XGBoost is great for identifying real churners and Logistic Regression is good for predicting loyal customers or moderate-risk cases.
+
+  # However, both models can still make mistakes, particularly when using a high decision threshold (0.7). This high threshold makes the models more conservative, especially
+  # XGBoost, causing it to miss customers with moderate churn risk.
+
+  # A sample of ten customers was highlighted (6861-XWTWQ, 2609-IAICY, 6857-VWJDT, 3716-BDVDB, 1820-TQVEV, 8375-DKEBR, 5539-TMZLF, 1143-NMNQJ, 0841-NULXI, 8622-ZLFKO), these
+  # customers have a high probability of leaving or stop using the telecommunication services based on XGBoost. While only 10 are shown for readability, the analysis will
+  # extend its subset of at-risk customers. (By changing it through code (head))
+
+  # During model evaluation, it was found that XGBoost failed to predict over 200 actual churners. Logistic Regression on the other hand, assigned moderate churn probabilities,
+  # mostly ranging between 0.4 and 0.7 to many of these missed cases,  indicating that XGBoost may underestimate moderate-risk churners. A sample of ten customers was
+  # highlighted (2839-RFSQE, 7752-XUSCI, 2091-MJTFX, 8676-TRMJS, 6298-QDFNH, 4800-CZMPC, 9286-DOJGF, 6646-QVXLR, 5049-GLYVG, 8988-ECPJR), these customers will actually
+  # churn but the model missed it. This indicates that Logistic Regression can serve as a valuable secondary signal in identifying risky customers.
+
+  # Adjusting the decision threshold or combining both model outputs could reduce false negatives and improve overall performance. These findings are crucial in defining
+  # the scope of our proactive retention campaign, ensuring that more potential churners are identified and more customers will stay and keep using the telecommunication
+  # services.
 
 #### LIBRARIES ####
 import pandas as pd
@@ -167,6 +187,10 @@ print("-"*60,"\n")
 
 # We'll temprorarily drop irrelevant columns for the model. This will reduce training load for the model to handle.
 # customerID is purely unique identifier. It's safe to drop.
+# As you can see, customerID is stored in "customer_id_copy". Gumawa ako ng copy niya para ma use as unique identifier sa results.
+# Still, d-drop pa rin siya kasi kapag hindi dinrop, masasama siya sa training ng model, which may affect the performance of the model.
+# Yung copy na yan will serve as unique identifier sa result para ma identify kung sinong customer yon. Kasi lahat ng data na ginamit sa training, hindi na kasama sa testing.
+customer_id_copy = df['customerID']
 df = df.drop('customerID', axis = 1) # axis = 0: delete a row; axis = 1 delete a column
 print("'customerID' dropped")
 print("-"*60,"\n")
@@ -230,7 +254,7 @@ y = df_encoded['Churn']
   # test_size is how much data goes into test set (denoted by 0.2 = 20%)
   # random_state is the seed so results is reproducible. No seed = random
   # stratify=y ensures the class distribution in y is preserved in both the train and test sets.
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test, id_train, id_test = train_test_split(X, y, customer_id_copy, test_size=0.2, random_state=42, stratify=y)
   # 80% of data goes to training.
   # 20% goes to testing.
   # The proportion of churned vs. non-churned customers is the same in both sets.
@@ -330,6 +354,7 @@ print("-"*60,"\n")
 
 #### PREDICTION AND OUTPUT ####
 output = pd.DataFrame({
+    'CustomerID': id_test.values,
     'Actual': y_test.values,
     'LogReg_Predicted': y_pred_lr,
     'LogReg_Probability': y_probs_lr,
@@ -337,7 +362,7 @@ output = pd.DataFrame({
     'XGB_Probability': y_probs_xgb
 })
 
-print(output.head(10)) # Show top 10 predictions
+print(f"TOP 10 PREDICTIONS\n{output.head(10)}") # Show top 10 predictions
 print("-"*60, "\n")
 
 # Save to CSV for further inspection
@@ -385,10 +410,10 @@ plt.show()
 
 top10 = agreed_churn.head(10)
 plt.figure(figsize=(10, 6))
-sns.barplot(data=top10, x=top10.index, y='XGB_Probability', palette="Reds_r")
+sns.barplot(data=top10, x="CustomerID", y='XGB_Probability', palette="Reds_r")
 plt.title("Top 10 At-Risk Customers (Agreed by Both Models)")
 plt.ylabel("XGB Churn Probability")
-plt.xlabel("Customer Index")
+plt.xlabel("Customer ID")
 plt.xticks(rotation=45)
 plt.show()
 
@@ -413,7 +438,7 @@ plt.title("Number of False Negatives (Actual == 1, XGB Predicted == 0)")
 plt.xlabel("Actual Churn")
 plt.ylabel("Count")
 plt.show()
-
+print("-"*60, "\n")
 
 """
 Hindi ko alam paano "Proactively" magbibigay ng retention campaign sakanila
@@ -425,3 +450,65 @@ Gusto ba ni ma'am interactive?
 Kinangangamba ko lang, di naman din kasi alam ni ma'am yan baka mas humirap trabaho NATIN
 pucha tinanong nga natin siya diyan nilagay lang yung pangalan ni Enriquez sa doc
 """
+
+#### COMMON CATEGORIES IN HIGH RISK CHURNERS ####
+
+# print(X_test)
+
+# Reset index to ensure they align
+X_test_reset = X_test.reset_index(drop=True)
+output_reset = output.reset_index(drop=True)
+
+# Filter agreed high-risk customers
+high_risk = output_reset[(output_reset['LogReg_Predicted'] == 1) &
+                         (output_reset['XGB_Predicted'] == 1) &
+                         (output_reset['XGB_Probability'] >= 0.70)]
+
+# Get matching features from X_test
+high_risk_features = X_test_reset.loc[high_risk.index]
+
+# Analyze feature distributions
+threshold = 0.70
+print(f"Common Categories in high-risk churners:\n")
+
+results = []
+
+for col in high_risk_features.columns:
+    if high_risk_features[col].dtype == 'object':
+        top_val = high_risk_features[col].value_counts(normalize=True).idxmax()
+        percent = high_risk_features[col].value_counts(normalize=True).max() * 100
+        if percent >= 70:
+            results.append((col, percent, f"{col} = {percent:.1f}% of high-risk customers have '{top_val}'"))
+
+    elif high_risk_features[col].nunique() == 2 and set(high_risk_features[col].unique()) <= {0, 1}:
+        mean_val = high_risk_features[col].mean() * 100
+        if mean_val >= 70:
+            category_name = col.split('_')[-1] if '_' in col else col
+            results.append((col, mean_val, f"{col} = {mean_val:.1f}% of high-risk customers are '{category_name}'"))
+
+# Sort results by the percentage (index 1) in descending order
+results.sort(key=lambda x: x[1], reverse=True)
+
+# Print sorted results
+for _, _, message in results:
+    print(message)
+
+# Step 3: Plotting
+labels = [x[0] for x in results]
+values = [x[1] for x in results]
+
+plt.figure(figsize=(10, 6))
+bars = plt.barh(labels, values, color='skyblue')
+plt.xlabel("Percentage of High-Risk Customers")
+plt.title("Common Categories in High-Risk Churners")
+plt.xlim(0, 105)
+plt.gca().invert_yaxis()
+
+# Annotate bars
+for bar, val in zip(bars, values):
+    plt.text(val + 1, bar.get_y() + bar.get_height()/2, f"{val:.1f}%", va='center')
+
+plt.tight_layout()
+plt.show()
+
+print("-"*60, "\n")
